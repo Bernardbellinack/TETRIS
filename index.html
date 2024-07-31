@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="background-message">
+        <p>PROJECT REALISED BY Siegfried Bernard INACK BELL</p>
+    </div>
+    <div id="game-container">
+        <div id="left-panel">
+            <div id="controls">
+                <h2>Controls</h2>
+                <p>Left Arrow: Move Left</p>
+                <p>Right Arrow: Move Right</p>
+                <p>Down Arrow: Move Down</p>
+                <p>Up Arrow: Rotate</p>
+                <p>P: Pause</p>
+                <p>R: Resume</p>
+            </div>
+        </div>
+        <div id="game-panel">
+            <canvas id="gameCanvas"></canvas>
+            <canvas id="previewCanvas"></canvas>
+        </div>
+        <div id="right-panel">
+            <div id="buttons">
+                <button id="startButton">Start</button>
+                <button id="pauseButton">Pause</button>
+                <button id="resumeButton" style="display: none;">Resume</button>
+                <button id="restartButton">Restart</button>
+                <button id="exitButton">Exit</button>
+            </div>
+            <div id="scoreBoard">
+                <p id="score">Score: 0</p>
+                <p id="highScore">High Score: 0</p>
+            </div>
+        </div>
+    </div>
+    <div id="gameOverPopup" class="popup hidden">
+        <p>Game Over!</p>
+        <p id="finalScore">Score: 0</p>
+        <button id="popupRestartButton">Restart</button>
+        <button id="popupExitButton">Exit</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
