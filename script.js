@@ -42,10 +42,11 @@ let isPaused = false;
 // Sound effects and music
 const lineClearSound = new Audio('sounds/lineClear.mp3');
 const gameOverSound = new Audio('sounds/gameOver.mp3');
+const rotateSound = new Audio('sounds/rotate.mp3');
 const backgroundMusic = new Audio('sounds/backgroundMusic.mp3');
 backgroundMusic.loop = true;
 
-// Define Tetriminos shapes and colors
+// Define TETRIMINOS shapes and colors
 const TETRIMINOS = {
     I: { shape: [[1, 1, 1, 1]], color: 'cyan' },
     J: { shape: [[1, 0, 0], [1, 1, 1]], color: 'blue' },
@@ -80,124 +81,157 @@ function startGame() {
     backgroundMusic.play();
     generateTetrimino();
     gameInterval = setInterval(updateGame, 1000 - level * 100); // Adjust game speed based on level
-    document.addEventListener('keydown', handleKeyPress);
 }
 
-// Pause the game
+function updateGame() {
+    if (!isPaused) {
+        if (!moveTetriminoDown()) {
+            freezeTetrimino();
+            clearLines();
+            generateTetrimino();
+            if (isGameOver()) {
+                endGame();
+            }
+        }
+        drawBoard();
+        drawTetrimino();
+    }
+}
+
 function pauseGame() {
-    clearInterval(gameInterval);
     isPaused = true;
+    clearInterval(gameInterval);
     pauseButton.style.display = 'none';
     resumeButton.style.display = 'inline';
 }
 
-// Resume the game
 function resumeGame() {
-    gameInterval = setInterval(updateGame, 1000 - level * 100);
     isPaused = false;
+    gameInterval = setInterval(updateGame, 1000 - level * 100); // Adjust game speed based on level
     resumeButton.style.display = 'none';
     pauseButton.style.display = 'inline';
 }
 
-// Restart the game
 function restartGame() {
-    clearInterval(gameInterval);
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
     startGame();
 }
 
-// Exit the game
-function exitGame() {
+function endGame() {
     clearInterval(gameInterval);
+    gameOverSound.play();
     backgroundMusic.pause();
+    finalScoreDisplay.textContent = `Score: ${score}`;
+    gameOverPopup.classList.remove('hidden');
     startButton.style.display = 'inline';
     pauseButton.style.display = 'none';
     resumeButton.style.display = 'none';
     restartButton.style.display = 'none';
     exitButton.style.display = 'none';
-    document.removeEventListener('keydown', handleKeyPress);
-}
 
-// Generate a new Tetrimino
-function generateTetrimino() {
-    const keys = Object.keys(TETRIMINOS);
-    const randomKey = keys[Math.floor(Math.random() * keys.length)];
-    currentTetrimino = TETRIMINOS[randomKey];
-    currentPos = { x: Math.floor((cols - currentTetrimino.shape[0].length) / 2), y: 0 };
-    if (!isValidMove(currentTetrimino, currentPos)) {
-        gameOver();
-    } else {
-        drawTetrimino(currentTetrimino, currentPos);
-        drawPreview();
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
     }
 }
 
-// Draw the Tetrimino on the canvas
-function drawTetrimino(tetrimino, pos) {
-    ctx.fillStyle = tetrimino.color;
-    tetrimino.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value) {
-                ctx.fillRect((pos.x + x) * blockSize, (pos.y + y) * blockSize, blockSize, blockSize);
-            }
-        });
-    });
+// Function to move the background message
+function moveBackgroundMessage() {
+    let x = Math.random() * (window.innerWidth - backgroundMessage.offsetWidth);
+    let y = Math.random() * (window.innerHeight - backgroundMessage.offsetHeight);
+    let xDirection = Math.random() < 0.5 ? -1 : 1;
+    let yDirection = Math.random() < 0.5 ? -1 : 1;
+
+    setInterval(() => {
+        x += xDirection * 2;
+        y += yDirection * 2;
+
+        if (x <= 0 || x >= window.innerWidth - backgroundMessage.offsetWidth) {
+            xDirection *= -1;
+        }
+
+        if (y <= 0 || y >= window.innerHeight - backgroundMessage.offsetHeight) {
+            yDirection *= -1;
+        }
+
+        backgroundMessage.style.left = `${x}px`;
+        backgroundMessage.style.top = `${y}px`;
+    }, 50);
 }
 
-// Draw the preview of the next Tetrimino
+// Initialize the background message movement
+moveBackgroundMessage();
+
+// Function to generate a random Tetrimino
+function generateTetrimino() {
+    const tetriminos = 'IJLOSTZ';
+    const rand = Math.floor(Math.random() * tetriminos.length);
+    const name = tetriminos[rand];
+    currentTetrimino = TETRIMINOS[name];
+    currentPos = { x: Math.floor((cols - currentTetrimino.shape[0].length) / 2), y: 0 };
+    nextTetrimino = TETRIMINOS[tetriminos[(rand + 1) % tetriminos.length]];
+    drawPreview();
+}
+
 function drawPreview() {
     previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    const nextKeys = Object.keys(TETRIMINOS);
-    const randomNextKey = nextKeys[Math.floor(Math.random() * nextKeys.length)];
-    nextTetrimino = TETRIMINOS[randomNextKey];
-    previewCtx.fillStyle = nextTetrimino.color;
-    nextTetrimino.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value) {
-                previewCtx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
-            }
-        });
-    });
+    drawShape(nextTetrimino.shape, { x: 0, y: 0 }, previewCtx, nextTetrimino.color);
 }
 
-// Update the game state
-function updateGame() {
-    moveTetriminoDown();
-}
-
-// Move the Tetrimino down
-function moveTetriminoDown() {
-    const newPos = { x: currentPos.x, y: currentPos.y + 1 };
-    if (isValidMove(currentTetrimino, newPos)) {
-        currentPos = newPos;
-    } else {
-        placeTetrimino();
-        clearLines();
-        generateTetrimino();
+function moveTetriminoLeft() {
+    if (!isCollision(currentTetrimino.shape, { x: currentPos.x - 1, y: currentPos.y })) {
+        currentPos.x -= 1;
     }
-    drawBoard();
 }
 
-// Place the Tetrimino on the board
-function placeTetrimino() {
+function moveTetriminoRight() {
+    if (!isCollision(currentTetrimino.shape, { x: currentPos.x + 1, y: currentPos.y })) {
+        currentPos.x += 1;
+    }
+}
+
+function moveTetriminoDown() {
+    if (!isCollision(currentTetrimino.shape, { x: currentPos.x, y: currentPos.y + 1 })) {
+        currentPos.y += 1;
+        return true;
+    }
+    return false;
+}
+
+function rotateTetrimino() {
+    const rotatedShape = currentTetrimino.shape[0].map((_, i) =>
+        currentTetrimino.shape.map(row => row[i])
+    ).reverse();
+
+    if (!isCollision(rotatedShape, currentPos)) {
+        currentTetrimino.shape = rotatedShape;
+        rotateSound.play();
+    }
+}
+
+function freezeTetrimino() {
     currentTetrimino.shape.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value) {
-                board[currentPos.y + y][currentPos.x + x] = currentTetrimino.color;
+                board[y + currentPos.y][x + currentPos.x] = value;
             }
         });
     });
 }
 
-// Clear completed lines
 function clearLines() {
     let linesCleared = 0;
-    board.forEach((row, y) => {
-        if (row.every(cell => cell !== 0)) {
-            linesCleared++;
+
+    for (let y = board.length - 1; y >= 0; y--) {
+        if (board[y].every(value => value > 0)) {
             board.splice(y, 1);
             board.unshift(Array(cols).fill(0));
+            linesCleared += 1;
         }
-    });
+    }
+
     if (linesCleared > 0) {
         score += linesCleared * 100;
         scoreDisplay.textContent = `Score: ${score}`;
@@ -205,29 +239,74 @@ function clearLines() {
     }
 }
 
-// Draw the board and Tetrimino
+function isCollision(shape, position) {
+    for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+            if (
+                shape[y][x] &&
+                (board[y + position.y] && board[y + position.y][x + position.x]) !== 0
+            ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function isGameOver() {
+    return currentTetrimino.shape.some((row, y) => {
+        return row.some((value, x) => {
+            return value && board[y + currentPos.y] && board[y + currentPos.y][x + currentPos.x] !== 0;
+        });
+    });
+}
+
 function drawBoard() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     board.forEach((row, y) => {
-        row.forEach((cell, x) => {
-            if (cell) {
-                ctx.fillStyle = cell;
+        row.forEach((value, x) => {
+            if (value) {
+                ctx.fillStyle = currentTetrimino.color;
                 ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+                ctx.strokeRect(x * blockSize, y * blockSize, blockSize, blockSize);
             }
         });
     });
-    drawTetrimino(currentTetrimino, currentPos);
 }
 
-// Handle key press events
-function handleKeyPress(e) {
-    if (isPaused) return;
+function drawTetrimino() {
+    drawShape(currentTetrimino.shape, currentPos, ctx, currentTetrimino.color);
+}
+
+function drawShape(shape, position, context, color) {
+    context.fillStyle = color;
+    shape.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value) {
+                context.fillRect(
+                    (position.x + x) * blockSize,
+                    (position.y + y) * blockSize,
+                    blockSize,
+                    blockSize
+                );
+                context.strokeRect(
+                    (position.x + x) * blockSize,
+                    (position.y + y) * blockSize,
+                    blockSize,
+                    blockSize
+                );
+            }
+        });
+    });
+}
+
+document.addEventListener('keydown', (e) => {
     switch (e.keyCode) {
         case KEY.LEFT:
-            moveTetrimino(-1);
+            moveTetriminoLeft();
             break;
         case KEY.RIGHT:
-            moveTetrimino(1);
+            moveTetriminoRight();
             break;
         case KEY.DOWN:
             moveTetriminoDown();
@@ -242,97 +321,20 @@ function handleKeyPress(e) {
             resumeGame();
             break;
     }
-}
-
-// Move the Tetrimino left or right
-function moveTetrimino(dir) {
-    const newPos = { x: currentPos.x + dir, y: currentPos.y };
-    if (isValidMove(currentTetrimino, newPos)) {
-        currentPos = newPos;
-    }
     drawBoard();
-}
+    drawTetrimino();
+});
 
-// Rotate the Tetrimino
-function rotateTetrimino() {
-    const newTetrimino = { ...currentTetrimino, shape: rotateMatrix(currentTetrimino.shape) };
-    if (isValidMove(newTetrimino, currentPos)) {
-        currentTetrimino = newTetrimino;
-    }
-    drawBoard();
-}
-
-// Check if the move is valid
-function isValidMove(tetrimino, pos) {
-    return tetrimino.shape.every((row, y) => {
-        return row.every((value, x) => {
-            const newX = pos.x + x;
-            const newY = pos.y + y;
-            return (
-                value === 0 ||
-                (newX >= 0 && newX < cols && newY < rows && board[newY][newX] === 0)
-            );
-        });
-    });
-}
-
-// Rotate the matrix (Tetrimino)
-function rotateMatrix(matrix) {
-    return matrix[0].map((_, index) => matrix.map(row => row[index])).reverse();
-}
-
-// Game over
-function gameOver() {
-    clearInterval(gameInterval);
-    backgroundMusic.pause();
-    gameOverSound.play();
-    gameOverPopup.classList.remove('hidden');
-    finalScoreDisplay.textContent = `Score: ${score}`;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-        highScoreDisplay.textContent = `High Score: ${highScore}`;
-    }
-    document.removeEventListener('keydown', handleKeyPress);
-}
-
-// Background message animation
-let messagePosX = 0;
-let messagePosY = 0;
-let messageSpeedX = 2;
-let messageSpeedY = 1;
-
-function updateBackgroundMessage() {
-    const messageWidth = backgroundMessage.offsetWidth;
-    const messageHeight = backgroundMessage.offsetHeight;
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    // Update position
-    messagePosX += messageSpeedX;
-    messagePosY += messageSpeedY;
-
-    // Check for collision with boundaries and reverse direction if needed
-    if (messagePosX + messageWidth > windowWidth || messagePosX < 0) {
-        messageSpeedX = -messageSpeedX;
-    }
-    if (messagePosY + messageHeight > windowHeight || messagePosY < 0) {
-        messageSpeedY = -messageSpeedY;
-    }
-
-    // Apply new position
-    backgroundMessage.style.transform = `translate(${messagePosX}px, ${messagePosY}px)`;
-    requestAnimationFrame(updateBackgroundMessage);
-}
-
-// Start the background message animation
-updateBackgroundMessage();
-
-// Event listeners
 startButton.addEventListener('click', startGame);
 pauseButton.addEventListener('click', pauseGame);
 resumeButton.addEventListener('click', resumeGame);
 restartButton.addEventListener('click', restartGame);
-exitButton.addEventListener('click', exitGame);
 popupRestartButton.addEventListener('click', restartGame);
-popupExitButton.addEventListener('click', exitGame);
+exitButton.addEventListener('click', () => {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    window.location.reload();
+});
+popupExitButton.addEventListener('click', () => {
+    window.location.reload();
+});

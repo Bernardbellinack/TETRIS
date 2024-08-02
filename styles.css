@@ -1,68 +1,89 @@
-/* styles.css */
-body {
+* {
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background: #1a1a1a;
+  color: #f0f0f0;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(to bottom, #1e3c72, #2a5298);
-  color: #fff;
   overflow: hidden;
 }
 
-#background-message {
-  position: fixed;
-  top: 0;
-  left: 0;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 24px;
-  font-weight: bold;
-  z-index: -1;
-}
-
-#game-container {
+.game-container {
   display: flex;
   flex-direction: row;
+  justify-content: center;
   align-items: center;
+  max-width: 1200px;
+  width: 100%;
+  position: relative;
 }
 
-#left-panel, #right-panel {
-  width: 20%;
-  text-align: left;
+.left-panel, .right-panel {
+  width: 200px;
+  padding: 20px;
+  background: #333;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-#game-panel {
+.center-panel {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  width: 60%;
+  margin: 0 20px;
+}
+
+.canvas-container {
+  position: relative;
 }
 
 canvas {
-  background-color: #000;
-  margin-bottom: 10px;
-  border: 2px solid #fff;
+  background: #000;
+  border: 5px solid #444;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-#scoreBoard, #controls {
-  margin-bottom: 20px;
+#previewCanvas {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 2px solid #666;
+  width: 100px;
+  height: 50px;
+  background: #222;
 }
 
 button {
-  margin: 5px;
-  padding: 10px;
+  width: 100%;
+  padding: 15px 0;
+  margin: 10px 0;
+  font-size: 16px;
+  color: #fff;
+  background-color: #007bff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  background-color: #555;
-  color: white;
-  font-size: 16px;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #777;
+  background-color: #0056b3;
+}
+
+button:active {
+  background-color: #003f7f;
+}
+
+.hidden {
+  display: none;
 }
 
 #gameOverPopup {
@@ -70,13 +91,33 @@ button:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: #222;
+  background: rgba(0, 0, 0, 0.8);
   padding: 20px;
   border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   text-align: center;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.75);
+  z-index: 1000;
 }
 
-.hidden {
-  display: none;
+#background-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.popup-content {
+  color: #fff;
+}
+
+.score-container {
+  margin-top: 20px;
+}
+
+.score-container > div {
+  margin-bottom: 10px;
+  font-size: 20px;
 }
